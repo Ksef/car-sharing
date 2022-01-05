@@ -1,10 +1,13 @@
 package carsharing.configuration;
 
+import lombok.NoArgsConstructor;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+@NoArgsConstructor
 public class DBManager {
 
     private static final String CREATE_TABLE_COMPANY = """
@@ -37,10 +40,6 @@ public class DBManager {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-    }
-
-    public DBManager() {
-
     }
 
     public final void createTables() {

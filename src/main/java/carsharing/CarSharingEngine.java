@@ -13,20 +13,37 @@ public class CarSharingEngine {
     public static final String BACK = "0. Back";
     private final Scanner scanner;
     private final CustomerDAO customerDao;
-    private final String pathToDb;
+    private String pathToDb;
     private final DBManager DBManager;
 
-    public CarSharingEngine(String[] args) throws IllegalAccessError {
-        if (args.length == 2 && args[0].equals("-databaseFileName")) {
-            pathToDb = args[1];
-        } else {
-            pathToDb = "cars";
-            throw new IllegalArgumentException("Not valid arguments. Now DB name has default - 'cars'.");
-        }
+    public CarSharingEngine(String[] args) throws IllegalArgumentException {
+        argumentsManager(args);
         DBManager = new DBManager(pathToDb);
         DBManager.createTables();
         customerDao = new CustomerDAOImpl(pathToDb);
         scanner = new Scanner(System.in);
+    }
+
+    public void argumentsManager(String[] args) {
+        try {
+            if (args.length == 2 && args[0].equals("-databaseFileName")) {
+                pathToDb = args[1];
+            } else if (args.length == 1 && args[0].equals("-databaseFileName")) {
+                pathToDb = "cars";
+                System.out.println("""
+                        You didn't specify a second argument.
+                        Now DB name has default - 'cars'.
+                        """);
+            } else {
+                System.err.println("""
+                        APPLICATION CLOSED!
+                        You used invalid arguments.
+                        Please use '-databaseFileName cars'""");
+                System.exit(0);
+            }
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
     }
 
     public void run() {
