@@ -1,6 +1,5 @@
 package carsharing.roles;
 
-import carsharing.CarSharingEngine;
 import carsharing.car.Car;
 import carsharing.car.CarDAO;
 import carsharing.car.CarDAOImpl;
@@ -16,9 +15,9 @@ public class ManagerRole {
     private final CompanyDAO companyDao;
     private final Scanner scanner;
 
-    public ManagerRole(String pathToDb) {
-        carDao = new CarDAOImpl(pathToDb);
-        companyDao = new CompanyDAOImpl(pathToDb);
+    public ManagerRole() {
+        carDao = new CarDAOImpl();
+        companyDao = new CompanyDAOImpl();
         scanner = new Scanner(System.in);
     }
 
@@ -115,7 +114,7 @@ public class ManagerRole {
         for (var i : companies) {
             System.out.println(++index + ". " + i.getName());
         }
-        System.out.println(CarSharingEngine.BACK);
+        System.out.println("0. Back");
     }
 
     private void createCompany() {

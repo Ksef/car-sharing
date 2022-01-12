@@ -9,23 +9,22 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CompanyDAOImpl extends DBManager implements CompanyDAO {
+public class CompanyDAOImpl implements CompanyDAO {
 
     private final static String SELECT_NAME_BY_COMPANY = "SELECT name FROM company ORDER BY ID";
     private final static String INSERT_INTO_COMPANY = "INSERT INTO company (name) VALUES ?";
     private final static String SELECT_ID_BY_COMPANY = "SELECT id FROM company WHERE name = ?";
 
-    private final DBManager DBManager;
+    private final DBManager dbManager;
 
-    public CompanyDAOImpl(String name) {
-        super(name);
-        DBManager = new DBManager();
+    public CompanyDAOImpl() {
+        dbManager = new DBManager();
     }
 
     @Override
     public List<Company> getCompanies() {
         List<Company> companies = new ArrayList<>();
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_BY_COMPANY)) {
             connection.setAutoCommit(true);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -40,7 +39,7 @@ public class CompanyDAOImpl extends DBManager implements CompanyDAO {
 
     @Override
     public void createCompany(String name) {
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INTO_COMPANY)) {
             connection.setAutoCommit(true);
             preparedStatement.setString(1, name);
@@ -53,7 +52,7 @@ public class CompanyDAOImpl extends DBManager implements CompanyDAO {
     @Override
     public int getCompanyId(String name) {
         int id = -1;
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ID_BY_COMPANY)) {
             preparedStatement.setString(1, name);
             ResultSet resultSet = preparedStatement.executeQuery();

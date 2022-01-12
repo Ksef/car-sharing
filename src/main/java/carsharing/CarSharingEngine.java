@@ -1,35 +1,33 @@
 package carsharing;
 
+import carsharing.configuration.DBManager;
 import carsharing.customer.CustomerDAO;
 import carsharing.customer.CustomerDAOImpl;
 import carsharing.roles.CustomerRole;
 import carsharing.roles.ManagerRole;
-import carsharing.configuration.DBManager;
 
 import java.util.Scanner;
 
 public class CarSharingEngine {
 
-    public static final String BACK = "0. Back";
     private final Scanner scanner;
     private final CustomerDAO customerDao;
-    private String pathToDb;
-    private final DBManager DBManager;
+    private String dbName;
 
     public CarSharingEngine(String[] args) throws IllegalArgumentException {
         argumentsManager(args);
-        DBManager = new DBManager(pathToDb);
-        DBManager.createTables();
-        customerDao = new CustomerDAOImpl(pathToDb);
+        DBManager dbManager = new DBManager(dbName);
+        dbManager.createTables();
+        customerDao = new CustomerDAOImpl();
         scanner = new Scanner(System.in);
     }
 
     public void argumentsManager(String[] args) {
         try {
             if (args.length == 2 && args[0].equals("-databaseFileName")) {
-                pathToDb = args[1];
+                dbName = args[1];
             } else if (args.length == 1 && args[0].equals("-databaseFileName")) {
-                pathToDb = "cars";
+                dbName = "cars";
                 System.out.println("""
                         You didn't specify a second argument.
                         Now DB name has default - 'cars'.
@@ -47,8 +45,8 @@ public class CarSharingEngine {
     }
 
     public void run() {
-        ManagerRole manager = new ManagerRole(pathToDb);
-        CustomerRole customer = new CustomerRole(pathToDb);
+        ManagerRole manager = new ManagerRole();
+        CustomerRole customer = new CustomerRole();
         int action;
         do {
             printMainMenu();

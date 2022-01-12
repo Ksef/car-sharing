@@ -30,7 +30,7 @@ public class DBManager {
             REFERENCES car(id));
             """;
 
-    protected static String DB_URL;
+    private static String DB_URL;
     private static final java.lang.String JDBC_DRIVER = "org.h2.Driver";
 
     public DBManager(String name) {

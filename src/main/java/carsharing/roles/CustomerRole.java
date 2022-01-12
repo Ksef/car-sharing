@@ -1,6 +1,5 @@
 package carsharing.roles;
 
-import carsharing.CarSharingEngine;
 import carsharing.car.Car;
 import carsharing.company.Company;
 import carsharing.company.CompanyDAO;
@@ -20,10 +19,10 @@ public class CustomerRole {
     private List<Company> companies;
     private List<Car> cars;
 
-    public CustomerRole(String pathToDb) {
-        this.customerDao = new CustomerDAOImpl(pathToDb);
+    public CustomerRole() {
+        this.customerDao = new CustomerDAOImpl();
         this.scanner = new Scanner(System.in);
-        this.companyDao = new CompanyDAOImpl(pathToDb);
+        this.companyDao = new CompanyDAOImpl();
     }
 
     public void logInAsCustomer() {
@@ -136,7 +135,7 @@ public class CustomerRole {
             for (Company e : companies) {
                 System.out.println(++i + ". " + e.getName());
             }
-            System.out.println(CarSharingEngine.BACK);
+            System.out.println("0. Back");
             index = scanner.nextInt();
             System.out.println();
         }
@@ -181,7 +180,7 @@ public class CustomerRole {
         for (Car i : cars) {
             System.out.println(++index + ". " + i.getName());
         }
-        System.out.println(CarSharingEngine.BACK);
+        System.out.println("0. Back");
     }
 
     private static void printServices() {
@@ -198,6 +197,6 @@ public class CustomerRole {
         for (Customer e : customers) {
             System.out.println(++i + ". " + e.getName());
         }
-        System.out.println(CarSharingEngine.BACK);
+        System.out.println("0. Back");
     }
 }

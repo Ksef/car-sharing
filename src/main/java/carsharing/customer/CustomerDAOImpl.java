@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class CustomerDAOImpl extends DBManager implements CustomerDAO {
+public class CustomerDAOImpl implements CustomerDAO {
 
     private static final String SELECT_NAME_BY_CUSTOMER = "SELECT name from customer ORDER BY ID";
     private static final String SELECT_NAME_AND_CAR_ID = "SELECT name, rented_car_id FROM customer WHERE id = ?";
@@ -27,20 +27,19 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
     private static final String SELECT_ID_NAME_BY_CAR = "SELECT id, name FROM car WHERE company_id = ? ORDER BY id";
     private static final String INSERT_INTO_CUSTOMER_BY_NAME = "INSERT INTO customer (name) VALUES ?";
 
-    private final DBManager DBManager;
-    private Set<Integer> rentedCars;
+    private final DBManager dbManager;
     private List<Car> cars;
     private int company_id;
+    Set<Integer> idCars;
 
-    public CustomerDAOImpl(String name) {
-        super(name);
-        DBManager = new DBManager();
+    public CustomerDAOImpl() {
+        dbManager = new DBManager();
     }
 
     @Override
     public List<Customer> getCustomers() {
         List<Customer> result = new ArrayList<>();
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_BY_CUSTOMER)) {
             connection.setAutoCommit(true);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -55,18 +54,20 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
 
     @Override
     public Customer getInfoAboutRentedCar(int customerId) {
+
         Customer customer = null;
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_AND_CAR_ID)) {
             connection.setAutoCommit(true);
             preparedStatement.setInt(1, customerId);
             ResultSet resultSet = preparedStatement.executeQuery();
+
             while (resultSet.next()) {
                 customer = new Customer(resultSet.getString(1));
                 int carId = resultSet.getInt(2);
                 if (carId != 0) {
-                    setCompanyId(customer, carId);
-                    setCompany(customerId, resultSet, customer);
+                    setCompanyId(customer, carId, connection);
+                    setCompany(customerId, resultSet, customer, connection);
                 }
             }
         } catch (SQLException e) {
@@ -75,40 +76,9 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
         return customer;
     }
 
-    private void setCompanyId(Customer customer, int carId) {
-        try (Connection connection = DBManager.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_AND_COMPANY_ID)) {
-            connection.setAutoCommit(true);
-            preparedStatement.setInt(1, carId);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            int companyId = 0;
-            while (resultSet.next()) {
-                customer.setCar(new Car(resultSet.getString(1)));
-                customer.setHasCar(true);
-                companyId = resultSet.getInt(2);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void setCompany(int companyId, ResultSet resultSet, Customer customer) {
-        try (Connection connection = DBManager.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_BY_COMPANY)) {
-            connection.setAutoCommit(true);
-            preparedStatement.setInt(1, companyId);
-            resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                customer.setCompany(new Company(resultSet.getString(1)));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void returnCar(int customerId) {
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_CUSTOMER_WITH_NULL_RENTED_CAR)) {
             connection.setAutoCommit(true);
             preparedStatement.setInt(1, customerId);
@@ -120,7 +90,7 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
 
     @Override
     public void rentCar(String carName, int customerId) {
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ID_BY_CAR_NAME)) {
             connection.setAutoCommit(true);
             preparedStatement.setString(1, carName);
@@ -135,22 +105,9 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
         }
     }
 
-    private void customerUpdater(int carId, int customerId) {
-        try {
-            Connection connection = DBManager.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_CUSTOMER);
-            connection.setAutoCommit(true);
-            preparedStatement.setInt(1, carId);
-            preparedStatement.setInt(2, customerId);
-            preparedStatement.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void createCustomer(String name) {
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INTO_CUSTOMER_BY_NAME)) {
             connection.setAutoCommit(true);
             preparedStatement.setString(1, name);
@@ -163,7 +120,7 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
     @Override
     public List<Car> getAvailableCars(Company company) {
         cars = new ArrayList<>();
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ID_BY_COMPANY)) {
             connection.setAutoCommit(true);
             preparedStatement.setString(1, company.getName());
@@ -180,14 +137,56 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
         return cars;
     }
 
+    private void setCompanyId(Customer customer, int carId, Connection connection) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_AND_COMPANY_ID)) {
+            connection.setAutoCommit(true);
+            preparedStatement.setInt(1, carId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            int companyId = 0;
+            while (resultSet.next()) {
+                customer.setCar(new Car(resultSet.getString(1)));
+                customer.setHasCar(true);
+                companyId = resultSet.getInt(2);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setCompany(int companyId, ResultSet resultSet, Customer customer, Connection connection) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_NAME_BY_COMPANY)) {
+            connection.setAutoCommit(true);
+            preparedStatement.setInt(1, companyId);
+            resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                customer.setCompany(new Company(resultSet.getString(1)));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void customerUpdater(int carId, int customerId) {
+        try {
+            Connection connection = dbManager.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_CUSTOMER);
+            connection.setAutoCommit(true);
+            preparedStatement.setInt(1, carId);
+            preparedStatement.setInt(2, customerId);
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void selectRentedCar() throws SQLException {
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_RENTED_CAR)) {
             connection.setAutoCommit(true);
             ResultSet resultSet = preparedStatement.executeQuery();
-            rentedCars = new HashSet<>();
+            idCars = new HashSet<>();
             while (resultSet.next()) {
-                rentedCars.add(resultSet.getInt(1));
+                idCars.add(resultSet.getInt(1));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -195,7 +194,7 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
     }
 
     private void companyCars() throws SQLException {
-        try (Connection connection = DBManager.getConnection();
+        try (Connection connection = dbManager.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ID_NAME_BY_CAR)) {
             connection.setAutoCommit(true);
             preparedStatement.setInt(1, company_id);
@@ -203,7 +202,7 @@ public class CustomerDAOImpl extends DBManager implements CustomerDAO {
             while (resultSet.next()) {
                 int id = resultSet.getInt(1);
                 String carName = resultSet.getString(2);
-                if (!rentedCars.contains(id)) {
+                if (!idCars.contains(id)) {
                     cars.add(new Car(carName));
                 }
             }
