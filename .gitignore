@@ -10,7 +10,7 @@ bin/
 build/
 .gradle
 .gradletasknamecache
-gradle-app.setting
+gradle-carSharingEngine.setting
 !gradle-wrapper.jar
 
 ##############################
